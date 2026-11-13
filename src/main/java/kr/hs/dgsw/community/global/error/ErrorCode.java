@@ -17,6 +17,8 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
 
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 게시글입니다."),
+
     RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 모집글입니다."),
     RECRUITMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "모집글 작성자만 할 수 있는 작업입니다."),
     RECRUITMENT_ALREADY_CLOSED(HttpStatus.CONFLICT, "이미 마감된 모집글입니다."),

@@ -12,7 +12,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,8 +30,8 @@ class PostControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("활동 회원이 게시글을 등록하면 생성된 ID와 Location을 반환한다")
-    void createPost() throws Exception {
+    @DisplayName("게시글 등록·조회가 가능하고 수정·삭제 요청은 거부한다")
+    void createAndReadPost() throws Exception {
         MvcResult created = mockMvc.perform(post("/api/posts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -38,12 +41,46 @@ class PostControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").isNumber())
                 .andExpect(jsonPath("$.data.authorId").value(2))
-                .andExpect(jsonPath("$.data.title").value("첫 게시글"))
-                .andExpect(jsonPath("$.data.content").value("처음 작성한 본문"))
                 .andReturn();
         long id = objectMapper.readTree(created.getResponse().getContentAsByteArray())
                 .path("data").path("id").asLong();
-        assertThat(created.getResponse().getHeader("Location")).isEqualTo("/api/posts/" + id);
+        String location = created.getResponse().getHeader("Location");
+        assertThat(location).isEqualTo("/api/posts/" + id);
+
+        mockMvc.perform(get("/api/posts").param("page", "0").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].id").value(id));
+
+        mockMvc.perform(get(location))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("첫 게시글"));
+
+        mockMvc.perform(put(location)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title": "수정한 제목", "content": "수정한 본문"}
+                                """))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value(ErrorCode.METHOD_NOT_ALLOWED.name()));
+
+        mockMvc.perform(delete(location))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value(ErrorCode.METHOD_NOT_ALLOWED.name()));
+
+        mockMvc.perform(get(location))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("첫 게시글"))
+                .andExpect(jsonPath("$.data.content").value("처음 작성한 본문"))
+                .andExpect(jsonPath("$.data.authorId").value(2));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 게시글 조회 시 404를 반환한다")
+    void rejectMissingPost() throws Exception {
+        mockMvc.perform(get("/api/posts/{id}", Long.MAX_VALUE))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(ErrorCode.POST_NOT_FOUND.name()));
     }
 
     @Test

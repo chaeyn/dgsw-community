@@ -27,3 +27,12 @@ INSERT INTO recruitment (member_id, title, content, recruit_position, capacity, 
 (5, '졸업 작품 Spring 백엔드 팀원 모집',       '3학년 졸업 작품입니다. 주 2회 회의 가능하신 분.',                     'BACKEND',  3, '2026-12-20', 'OPEN',   '2026-11-06 10:10:00', '2026-11-06 10:10:00'),
 (2, '플러터 앱 개발자 구합니다',               '기숙사 외출 신청 앱을 만들고 있습니다.',                              'MOBILE',   2, '2026-11-08', 'CLOSED', '2026-10-20 11:00:00', '2026-11-08 18:00:00'),
 (7, '공모전 기획 같이 하실 분',                '아이디어 단계부터 같이 하실 분 구합니다. 개발 경험 없어도 됩니다.',    'PLANNING', 2, '2026-12-01', 'OPEN',   '2026-11-07 19:45:00', '2026-11-07 19:45:00');
+
+-- 게시글 목록과 상세 조회에 사용하는 더미 데이터
+INSERT INTO post (author_id, title, content, created_at, updated_at) VALUES
+((SELECT id FROM member WHERE email = 'admin@dgsw.hs.kr'), '커뮤니티 이용 안내',
+ '학교생활과 개발에 관한 이야기를 자유롭게 나눠 주세요.', '2026-11-10 09:00:00', '2026-11-10 09:00:00'),
+((SELECT id FROM member WHERE email = 'kim@dgsw.hs.kr'), '백엔드 스터디 모집',
+ '방과 후에 Spring Boot와 JPA를 함께 공부할 분을 찾습니다.', '2026-11-10 10:00:00', '2026-11-10 10:00:00'),
+((SELECT id FROM member WHERE email = 'yoon@dgsw.hs.kr'), '테스트 코드 공부 자료 공유',
+ 'JUnit으로 API의 정상 응답과 오류 응답을 검증하는 예제를 공유합니다.', '2026-11-10 11:00:00', '2026-11-10 11:00:00');
