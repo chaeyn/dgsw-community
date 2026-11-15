@@ -4,10 +4,15 @@ import kr.hs.dgsw.community.global.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -32,6 +37,40 @@ public class GlobalExceptionHandler {
                 .toList();
         return ResponseEntity.badRequest()
                 .body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, errors));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(ErrorCode.INVALID_JSON));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        List<ErrorResponse.FieldError> errors = List.of(
+                new ErrorResponse.FieldError(e.getName(), "값의 타입이 올바르지 않습니다."));
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(ErrorCode.INVALID_TYPE_VALUE, errors));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException e) {
+        List<ErrorResponse.FieldError> errors = List.of(
+                new ErrorResponse.FieldError(e.getParameterName(), "필수 파라미터입니다."));
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(ErrorCode.MISSING_PARAMETER, errors));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException e) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(ErrorResponse.of(ErrorCode.UNSUPPORTED_MEDIA_TYPE));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
