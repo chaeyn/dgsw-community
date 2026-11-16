@@ -4,6 +4,7 @@ import kr.hs.dgsw.community.domain.member.entity.Member;
 import kr.hs.dgsw.community.domain.member.entity.MemberStatus;
 import kr.hs.dgsw.community.domain.member.repository.MemberRepository;
 import kr.hs.dgsw.community.domain.post.dto.request.PostCreateRequest;
+import kr.hs.dgsw.community.domain.post.dto.request.PostUpdateRequest;
 import kr.hs.dgsw.community.domain.post.dto.response.PostPageResponse;
 import kr.hs.dgsw.community.domain.post.dto.response.PostResponse;
 import kr.hs.dgsw.community.domain.post.entity.Post;
@@ -44,6 +45,23 @@ public class PostServiceImpl implements PostService {
         PageRequest newestFirst = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "id"));
         return PostPageResponse.from(postRepository.findAll(newestFirst).map(PostServiceImpl::toResponse));
+    }
+
+    @Override
+    @Transactional
+    public PostResponse update(Long id, PostUpdateRequest request) {
+        Post post = getPost(id);
+        validateAuthor(post, request.authorId());
+        post.update(request.title(), request.content());
+        // Flush auditing changes before building the response containing updatedAt.
+        postRepository.flush();
+        return toResponse(post);
+    }
+
+    private void validateAuthor(Post post, Long authorId) {
+        if (!post.isWrittenBy(authorId)) {
+            throw new BusinessException(ErrorCode.POST_FORBIDDEN);
+        }
     }
 
     private Post getPost(Long id) {

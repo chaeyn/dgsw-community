@@ -2,6 +2,7 @@ package kr.hs.dgsw.community.domain.post.controller;
 
 import jakarta.validation.Valid;
 import kr.hs.dgsw.community.domain.post.dto.request.PostCreateRequest;
+import kr.hs.dgsw.community.domain.post.dto.request.PostUpdateRequest;
 import kr.hs.dgsw.community.domain.post.dto.response.PostPageResponse;
 import kr.hs.dgsw.community.domain.post.dto.response.PostResponse;
 import kr.hs.dgsw.community.domain.post.service.PostService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,6 +49,13 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostResponse>> findById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.of("게시글 조회에 성공했습니다.", postService.findById(id)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<PostResponse>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody PostUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.of("게시글이 수정되었습니다.", postService.update(id, request)));
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})

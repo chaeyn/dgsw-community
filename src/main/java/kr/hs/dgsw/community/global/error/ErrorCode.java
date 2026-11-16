@@ -24,6 +24,7 @@ public enum ErrorCode {
     PASSWORD_NOT_CHANGED(HttpStatus.BAD_REQUEST, "새 비밀번호가 기존 비밀번호와 동일합니다."),
 
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 게시글입니다."),
+    POST_FORBIDDEN(HttpStatus.FORBIDDEN, "게시글 작성자만 할 수 있는 작업입니다."),
 
     RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 모집글입니다."),
     RECRUITMENT_FORBIDDEN(HttpStatus.FORBIDDEN, "모집글 작성자만 할 수 있는 작업입니다."),
