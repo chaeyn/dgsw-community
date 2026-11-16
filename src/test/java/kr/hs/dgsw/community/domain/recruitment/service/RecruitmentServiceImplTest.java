@@ -11,6 +11,7 @@ import kr.hs.dgsw.community.domain.recruitment.dto.response.RecruitmentResponse;
 import kr.hs.dgsw.community.domain.recruitment.entity.Recruitment;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentPosition;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentStatus;
+import kr.hs.dgsw.community.domain.recruitment.repository.RecruitmentApplicationRepository;
 import kr.hs.dgsw.community.domain.recruitment.repository.RecruitmentRepository;
 import kr.hs.dgsw.community.global.error.BusinessException;
 import kr.hs.dgsw.community.global.error.ErrorCode;
@@ -46,6 +47,9 @@ class RecruitmentServiceImplTest {
 
     @Mock
     private RecruitmentRepository recruitmentRepository;
+
+    @Mock
+    private RecruitmentApplicationRepository applicationRepository;
 
     @Mock
     private MemberRepository memberRepository;
@@ -263,6 +267,7 @@ class RecruitmentServiceImplTest {
 
             recruitmentService.delete(10L, 1L);
 
+            verify(applicationRepository).deleteByRecruitmentId(10L);
             verify(recruitmentRepository).delete(recruitment);
         }
 

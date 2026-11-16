@@ -10,6 +10,7 @@ import kr.hs.dgsw.community.domain.recruitment.dto.response.RecruitmentResponse;
 import kr.hs.dgsw.community.domain.recruitment.entity.Recruitment;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentPosition;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentStatus;
+import kr.hs.dgsw.community.domain.recruitment.repository.RecruitmentApplicationRepository;
 import kr.hs.dgsw.community.domain.recruitment.repository.RecruitmentRepository;
 import kr.hs.dgsw.community.global.error.BusinessException;
 import kr.hs.dgsw.community.global.error.ErrorCode;
@@ -29,6 +30,7 @@ public class RecruitmentServiceImpl implements RecruitmentService {
     private static final int MAX_OPEN_RECRUITMENTS = 3;
 
     private final RecruitmentRepository recruitmentRepository;
+    private final RecruitmentApplicationRepository applicationRepository;
     private final MemberRepository memberRepository;
 
     @Override
@@ -99,6 +101,7 @@ public class RecruitmentServiceImpl implements RecruitmentService {
         Recruitment recruitment = getRecruitment(id);
         validateAuthor(recruitment, memberId);
 
+        applicationRepository.deleteByRecruitmentId(id);
         recruitmentRepository.delete(recruitment);
         log.info("모집글 삭제: id={}", id);
     }

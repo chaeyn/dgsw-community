@@ -28,6 +28,14 @@ INSERT INTO recruitment (member_id, title, content, recruit_position, capacity, 
 (2, '플러터 앱 개발자 구합니다',               '기숙사 외출 신청 앱을 만들고 있습니다.',                              'MOBILE',   2, '2026-11-08', 'CLOSED', '2026-10-20 11:00:00', '2026-11-08 18:00:00'),
 (7, '공모전 기획 같이 하실 분',                '아이디어 단계부터 같이 하실 분 구합니다. 개발 경험 없어도 됩니다.',    'PLANNING', 2, '2026-12-01', 'OPEN',   '2026-11-07 19:45:00', '2026-11-07 19:45:00');
 
+INSERT INTO recruitment_application (recruitment_id, member_id, message, status, created_at, updated_at) VALUES
+(1, 3, '백엔드 공부 중인데 같이 하고 싶습니다.',        'PENDING',  '2026-11-04 08:50:00', '2026-11-04 08:50:00'),
+(1, 6, 'JPA 프로젝트 경험 있습니다.',                    'ACCEPTED', '2026-11-04 12:10:00', '2026-11-05 09:00:00'),
+(2, 8, '리액트로 토이 프로젝트 몇 개 해봤어요.',         'PENDING',  '2026-11-05 15:30:00', '2026-11-05 15:30:00'),
+(4, 3, '졸업 작품 같이 하고 싶습니다.',                  'REJECTED', '2026-11-06 20:00:00', '2026-11-07 10:00:00'),
+(4, 7, '쿼리 튜닝 쪽 맡고 싶습니다.',                    'PENDING',  '2026-11-07 11:20:00', '2026-11-07 11:20:00'),
+(5, 9, '플러터 앱 테스트 도와드릴 수 있습니다.',         'ACCEPTED', '2026-10-22 14:00:00', '2026-10-23 09:30:00');
+
 -- 게시글 목록과 상세 조회에 사용하는 더미 데이터
 INSERT INTO post (author_id, title, content, created_at, updated_at) VALUES
 ((SELECT id FROM member WHERE email = 'admin@dgsw.hs.kr'), '커뮤니티 이용 안내',
