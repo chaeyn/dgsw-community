@@ -10,13 +10,16 @@ import kr.hs.dgsw.community.domain.member.entity.Member;
 import kr.hs.dgsw.community.domain.member.entity.MemberRole;
 import kr.hs.dgsw.community.domain.member.entity.MemberStatus;
 import kr.hs.dgsw.community.domain.member.repository.MemberRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -36,13 +39,19 @@ class MemberServiceImplTest {
     @Mock
     private MemberRepository memberRepository;
 
-    @InjectMocks
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     private MemberServiceImpl memberService;
 
-    private Member createMember(Long id, String email, String nickname, String password) {
+    @BeforeEach
+    void setUp() {
+        memberService = new MemberServiceImpl(memberRepository, passwordEncoder);
+    }
+
+    private Member createMember(Long id, String email, String nickname, String rawPassword) {
         Member member = Member.builder()
                 .email(email)
-                .password(password)
+                .password(passwordEncoder.encode(rawPassword))
                 .nickname(nickname)
                 .introduction("소개")
                 .role(MemberRole.USER)
@@ -56,7 +65,7 @@ class MemberServiceImplTest {
     class Create {
 
         @Test
-        @DisplayName("성공 - 저장된 회원 정보가 반환되고 응답에 비밀번호가 포함되지 않는다")
+        @DisplayName("성공 - 비밀번호가 BCrypt 해시로 저장되고 응답에는 포함되지 않는다")
         void create_success() {
             MemberCreateRequest request =
                     new MemberCreateRequest("new@dgsw.hs.kr", "password123", "신규회원", "안녕하세요");
@@ -75,6 +84,12 @@ class MemberServiceImplTest {
             assertThat(response.email()).isEqualTo("new@dgsw.hs.kr");
             assertThat(response.nickname()).isEqualTo("신규회원");
             assertThat(response.status()).isEqualTo(MemberStatus.ACTIVE.name());
+
+            ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
+            verify(memberRepository).save(captor.capture());
+            String stored = captor.getValue().getPassword();
+            assertThat(stored).isNotEqualTo("password123").startsWith("$2a$");
+            assertThat(passwordEncoder.matches("password123", stored)).isTrue();
         }
 
         @Test
@@ -172,6 +187,7 @@ class MemberServiceImplTest {
         @DisplayName("실패 - 현재 비밀번호가 일치하지 않으면 PASSWORD_MISMATCH 예외가 발생한다")
         void changePassword_mismatch() {
             Member member = createMember(1L, "hong@dgsw.hs.kr", "홍길동", "password123");
+            String before = member.getPassword();
             given(memberRepository.findByIdAndStatus(1L, MemberStatus.ACTIVE))
                     .willReturn(Optional.of(member));
 
@@ -180,19 +196,37 @@ class MemberServiceImplTest {
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PASSWORD_MISMATCH);
 
-            assertThat(member.getPassword()).isEqualTo("password123");
+            assertThat(member.getPassword()).isEqualTo(before);
         }
 
         @Test
-        @DisplayName("성공 - 새 비밀번호가 반영된다")
+        @DisplayName("실패 - 새 비밀번호가 기존 비밀번호와 같으면 PASSWORD_NOT_CHANGED 예외가 발생한다")
+        void changePassword_notChanged() {
+            Member member = createMember(1L, "hong@dgsw.hs.kr", "홍길동", "password123");
+            String before = member.getPassword();
+            given(memberRepository.findByIdAndStatus(1L, MemberStatus.ACTIVE))
+                    .willReturn(Optional.of(member));
+
+            assertThatThrownBy(() -> memberService.changePassword(
+                    1L, new PasswordChangeRequest("password123", "password123")))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PASSWORD_NOT_CHANGED);
+
+            assertThat(member.getPassword()).isEqualTo(before);
+        }
+
+        @Test
+        @DisplayName("성공 - 새 비밀번호가 평문이 아닌 해시 값으로 교체된다")
         void changePassword_success() {
             Member member = createMember(1L, "hong@dgsw.hs.kr", "홍길동", "password123");
+            String before = member.getPassword();
             given(memberRepository.findByIdAndStatus(1L, MemberStatus.ACTIVE))
                     .willReturn(Optional.of(member));
 
             memberService.changePassword(1L, new PasswordChangeRequest("password123", "newPassword1"));
 
-            assertThat(member.getPassword()).isEqualTo("newPassword1");
+            assertThat(member.getPassword()).isNotEqualTo(before).isNotEqualTo("newPassword1");
+            assertThat(passwordEncoder.matches("newPassword1", member.getPassword())).isTrue();
         }
     }
 
