@@ -138,7 +138,7 @@ class RecruitmentServiceImplTest {
         @Test
         @DisplayName("실패 - 없는 모집글이면 RECRUITMENT_NOT_FOUND 예외가 발생한다")
         void findById_notFound() {
-            given(recruitmentRepository.findById(999L)).willReturn(Optional.empty());
+            given(recruitmentRepository.findWithAuthorById(999L)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> recruitmentService.findById(999L))
                     .isInstanceOf(BusinessException.class)
@@ -153,29 +153,27 @@ class RecruitmentServiceImplTest {
         private final Pageable pageable = PageRequest.of(0, 10);
 
         @Test
-        @DisplayName("조건이 없으면 빈 키워드로 전체 조회 메서드를 호출한다")
-        void search_noCondition() {
-            given(recruitmentRepository.findByTitleContainingIgnoreCase("", pageable))
+        @DisplayName("검색 결과가 페이지 응답 DTO 로 변환된다")
+        void search_success() {
+            given(recruitmentRepository.search("백엔드", RecruitmentPosition.BACKEND, RecruitmentStatus.OPEN, pageable))
                     .willReturn(new PageImpl<>(List.of(createRecruitment(10L, createMember(1L, "홍길동")))));
 
-            RecruitmentPageResponse response = recruitmentService.search(null, null, null, pageable);
+            RecruitmentPageResponse response = recruitmentService.search(
+                    "백엔드", RecruitmentPosition.BACKEND, RecruitmentStatus.OPEN, pageable);
 
             assertThat(response.totalElements()).isEqualTo(1);
             assertThat(response.content().get(0).authorNickname()).isEqualTo("홍길동");
         }
 
         @Test
-        @DisplayName("분야와 상태가 모두 있으면 두 조건을 같이 거는 메서드를 호출한다")
-        void search_positionAndStatus() {
-            given(recruitmentRepository.findByTitleContainingIgnoreCaseAndPositionAndStatus(
-                    "백엔드", RecruitmentPosition.BACKEND, RecruitmentStatus.OPEN, pageable))
-                    .willReturn(Page.empty());
+        @DisplayName("결과가 없으면 빈 목록을 반환한다")
+        void search_empty() {
+            given(recruitmentRepository.search(null, null, null, pageable)).willReturn(Page.empty());
 
-            RecruitmentPageResponse response = recruitmentService.search(
-                    " 백엔드 ", RecruitmentPosition.BACKEND, RecruitmentStatus.OPEN, pageable);
+            RecruitmentPageResponse response = recruitmentService.search(null, null, null, pageable);
 
             assertThat(response.content()).isEmpty();
-            verify(recruitmentRepository, never()).findByTitleContainingIgnoreCase(any(), any());
+            assertThat(response.totalElements()).isZero();
         }
     }
 
@@ -190,7 +188,7 @@ class RecruitmentServiceImplTest {
         @DisplayName("성공 - 작성자가 수정하면 변경 내용이 반영된다")
         void update_success() {
             Recruitment recruitment = createRecruitment(10L, createMember(1L, "홍길동"));
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             RecruitmentResponse response = recruitmentService.update(10L, request);
 
@@ -203,7 +201,7 @@ class RecruitmentServiceImplTest {
         @DisplayName("실패 - 작성자가 아니면 RECRUITMENT_FORBIDDEN 예외가 발생하고 내용은 그대로다")
         void update_notAuthor() {
             Recruitment recruitment = createRecruitment(10L, createMember(2L, "김코딩"));
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             assertThatThrownBy(() -> recruitmentService.update(10L, request))
                     .isInstanceOf(BusinessException.class)
@@ -217,7 +215,7 @@ class RecruitmentServiceImplTest {
         void update_closed() {
             Recruitment recruitment = createRecruitment(10L, createMember(1L, "홍길동"));
             recruitment.close();
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             assertThatThrownBy(() -> recruitmentService.update(10L, request))
                     .isInstanceOf(BusinessException.class)
@@ -233,7 +231,7 @@ class RecruitmentServiceImplTest {
         @DisplayName("성공 - 상태가 CLOSED 로 바뀐다")
         void close_success() {
             Recruitment recruitment = createRecruitment(10L, createMember(1L, "홍길동"));
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             RecruitmentResponse response = recruitmentService.close(10L, 1L);
 
@@ -245,7 +243,7 @@ class RecruitmentServiceImplTest {
         void close_alreadyClosed() {
             Recruitment recruitment = createRecruitment(10L, createMember(1L, "홍길동"));
             recruitment.close();
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             assertThatThrownBy(() -> recruitmentService.close(10L, 1L))
                     .isInstanceOf(BusinessException.class)
@@ -261,7 +259,7 @@ class RecruitmentServiceImplTest {
         @DisplayName("성공 - 작성자가 요청하면 삭제된다")
         void delete_success() {
             Recruitment recruitment = createRecruitment(10L, createMember(1L, "홍길동"));
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             recruitmentService.delete(10L, 1L);
 
@@ -272,7 +270,7 @@ class RecruitmentServiceImplTest {
         @DisplayName("실패 - 작성자가 아니면 삭제되지 않는다")
         void delete_notAuthor() {
             Recruitment recruitment = createRecruitment(10L, createMember(2L, "김코딩"));
-            given(recruitmentRepository.findById(10L)).willReturn(Optional.of(recruitment));
+            given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
             assertThatThrownBy(() -> recruitmentService.delete(10L, 1L))
                     .isInstanceOf(BusinessException.class)

@@ -1,24 +1,19 @@
 package kr.hs.dgsw.community.domain.recruitment.repository;
 
 import kr.hs.dgsw.community.domain.recruitment.entity.Recruitment;
-import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentPosition;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface RecruitmentRepository extends JpaRepository<Recruitment, Long> {
+import java.util.Optional;
 
-    Page<Recruitment> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+public interface RecruitmentRepository extends JpaRepository<Recruitment, Long>, RecruitmentRepositoryCustom {
 
-    Page<Recruitment> findByTitleContainingIgnoreCaseAndPosition(
-            String title, RecruitmentPosition position, Pageable pageable);
+    @Query("select r from Recruitment r join fetch r.author where r.id = :id")
+    Optional<Recruitment> findWithAuthorById(@Param("id") Long id);
 
-    Page<Recruitment> findByTitleContainingIgnoreCaseAndStatus(
-            String title, RecruitmentStatus status, Pageable pageable);
-
-    Page<Recruitment> findByTitleContainingIgnoreCaseAndPositionAndStatus(
-            String title, RecruitmentPosition position, RecruitmentStatus status, Pageable pageable);
-
-    long countByAuthorIdAndStatus(Long authorId, RecruitmentStatus status);
+    @Query("select count(r) from Recruitment r where r.author.id = :authorId and r.status = :status")
+    long countByAuthorIdAndStatus(@Param("authorId") Long authorId,
+                                  @Param("status") RecruitmentStatus status);
 }

@@ -15,11 +15,9 @@ import kr.hs.dgsw.community.global.error.BusinessException;
 import kr.hs.dgsw.community.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -66,25 +64,10 @@ public class RecruitmentServiceImpl implements RecruitmentService {
     @Override
     public RecruitmentPageResponse search(String keyword, RecruitmentPosition position,
                                           RecruitmentStatus status, Pageable pageable) {
-        // 키워드가 없으면 빈 문자열로 검색해서 전체가 나오게 한다
-        String title = StringUtils.hasText(keyword) ? keyword.trim() : "";
-        Page<Recruitment> recruitments = findRecruitments(title, position, status, pageable);
-        return RecruitmentPageResponse.from(recruitments.map(RecruitmentResponse::from));
-    }
-
-    private Page<Recruitment> findRecruitments(String title, RecruitmentPosition position,
-                                               RecruitmentStatus status, Pageable pageable) {
-        if (position != null && status != null) {
-            return recruitmentRepository.findByTitleContainingIgnoreCaseAndPositionAndStatus(
-                    title, position, status, pageable);
-        }
-        if (position != null) {
-            return recruitmentRepository.findByTitleContainingIgnoreCaseAndPosition(title, position, pageable);
-        }
-        if (status != null) {
-            return recruitmentRepository.findByTitleContainingIgnoreCaseAndStatus(title, status, pageable);
-        }
-        return recruitmentRepository.findByTitleContainingIgnoreCase(title, pageable);
+        return RecruitmentPageResponse.from(
+                recruitmentRepository.search(keyword, position, status, pageable)
+                        .map(RecruitmentResponse::from)
+        );
     }
 
     @Override
@@ -121,7 +104,7 @@ public class RecruitmentServiceImpl implements RecruitmentService {
     }
 
     private Recruitment getRecruitment(Long id) {
-        return recruitmentRepository.findById(id)
+        return recruitmentRepository.findWithAuthorById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RECRUITMENT_NOT_FOUND));
     }
 

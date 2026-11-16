@@ -7,6 +7,7 @@ import kr.hs.dgsw.community.domain.member.repository.MemberRepository;
 import kr.hs.dgsw.community.domain.recruitment.entity.Recruitment;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentPosition;
 import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentStatus;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -74,19 +75,17 @@ class RecruitmentRepositoryTest {
     }
 
     @Test
-    @DisplayName("빈 키워드로 검색하면 전체 모집글이 조회된다")
-    void findByTitle_emptyKeyword() {
-        Page<Recruitment> result =
-                recruitmentRepository.findByTitleContainingIgnoreCase("", PageRequest.of(0, 10));
+    @DisplayName("조건이 모두 없으면 전체 모집글이 조회된다")
+    void search_noCondition() {
+        Page<Recruitment> result = recruitmentRepository.search(null, null, null, PageRequest.of(0, 10));
 
         assertThat(result.getTotalElements()).isEqualTo(3);
     }
 
     @Test
     @DisplayName("제목 키워드는 대소문자를 구분하지 않고 검색된다")
-    void findByTitle_ignoreCase() {
-        Page<Recruitment> result =
-                recruitmentRepository.findByTitleContainingIgnoreCase("spring", PageRequest.of(0, 10));
+    void search_keyword() {
+        Page<Recruitment> result = recruitmentRepository.search("spring", null, null, PageRequest.of(0, 10));
 
         assertThat(result.getContent())
                 .extracting(Recruitment::getTitle)
@@ -95,9 +94,9 @@ class RecruitmentRepositoryTest {
 
     @Test
     @DisplayName("모집 분야와 상태를 같이 걸면 둘 다 만족하는 글만 나온다")
-    void findByTitleAndPositionAndStatus() {
-        Page<Recruitment> result = recruitmentRepository.findByTitleContainingIgnoreCaseAndPositionAndStatus(
-                "", RecruitmentPosition.BACKEND, RecruitmentStatus.OPEN, PageRequest.of(0, 10));
+    void search_positionAndStatus() {
+        Page<Recruitment> result = recruitmentRepository.search(
+                null, RecruitmentPosition.BACKEND, RecruitmentStatus.OPEN, PageRequest.of(0, 10));
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getAuthor().getNickname()).isEqualTo("홍길동");
@@ -105,23 +104,22 @@ class RecruitmentRepositoryTest {
 
     @Test
     @DisplayName("조건에 맞는 글이 없으면 빈 페이지를 반환한다")
-    void findByTitleAndPosition_noResult() {
-        Page<Recruitment> result = recruitmentRepository.findByTitleContainingIgnoreCaseAndPosition(
-                "없는제목", RecruitmentPosition.DESIGN, PageRequest.of(0, 10));
+    void search_noResult() {
+        Page<Recruitment> result = recruitmentRepository.search(
+                "없는제목", RecruitmentPosition.DESIGN, null, PageRequest.of(0, 10));
 
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
     }
 
     @Test
-    @DisplayName("마감된 모집글만 조회된다")
-    void findByTitleAndStatus_closed() {
-        Page<Recruitment> result = recruitmentRepository.findByTitleContainingIgnoreCaseAndStatus(
-                "", RecruitmentStatus.CLOSED, PageRequest.of(0, 10));
+    @DisplayName("페이지 크기보다 글이 많으면 나눠서 조회되고 전체 개수는 유지된다")
+    void search_paging() {
+        Page<Recruitment> result = recruitmentRepository.search(null, null, null, PageRequest.of(0, 2));
 
-        assertThat(result.getContent())
-                .extracting(Recruitment::getStatus)
-                .containsOnly(RecruitmentStatus.CLOSED);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(3);
+        assertThat(result.getTotalPages()).isEqualTo(2);
     }
 
     @Test
@@ -131,5 +129,19 @@ class RecruitmentRepositoryTest {
                 .isEqualTo(2);
         assertThat(recruitmentRepository.countByAuthorIdAndStatus(kim.getId(), RecruitmentStatus.OPEN))
                 .isZero();
+    }
+
+    @Test
+    @DisplayName("단건 조회 시 작성자가 함께 로딩되고, 없는 id 면 비어 있다")
+    void findWithAuthorById() {
+        Long id = recruitmentRepository.search("리액트", null, null, PageRequest.of(0, 1))
+                .getContent().get(0).getId();
+        em.clear();
+
+        Recruitment found = recruitmentRepository.findWithAuthorById(id).orElseThrow();
+
+        assertThat(Hibernate.isInitialized(found.getAuthor())).isTrue();
+        assertThat(found.getAuthor().getNickname()).isEqualTo("홍길동");
+        assertThat(recruitmentRepository.findWithAuthorById(999L)).isEmpty();
     }
 }
