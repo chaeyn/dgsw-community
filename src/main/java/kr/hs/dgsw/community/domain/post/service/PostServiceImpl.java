@@ -58,6 +58,14 @@ public class PostServiceImpl implements PostService {
         return toResponse(post);
     }
 
+    @Override
+    @Transactional
+    public void delete(Long id, Long authorId) {
+        Post post = getPost(id);
+        validateAuthor(post, authorId);
+        postRepository.delete(post);
+    }
+
     private void validateAuthor(Post post, Long authorId) {
         if (!post.isWrittenBy(authorId)) {
             throw new BusinessException(ErrorCode.POST_FORBIDDEN);

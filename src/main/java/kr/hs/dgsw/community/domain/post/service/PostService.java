@@ -15,4 +15,6 @@ public interface PostService {
     PostPageResponse findAll(Pageable pageable);
 
     PostResponse update(Long id, PostUpdateRequest request);
+
+    void delete(Long id, Long authorId);
 }
