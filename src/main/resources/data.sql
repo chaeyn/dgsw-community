@@ -1,20 +1,20 @@
 -- =====================================================================
 -- 테스트용 더미 데이터
--- 모든 회원의 비밀번호는 "password123" 이다.
--- (로그인/비밀번호 변경 API 테스트 시 currentPassword 값으로 "password123" 사용)
+-- 모든 회원의 비밀번호 평문은 "password123" 이며, BCrypt(strength 10) 해시 값으로 저장되어 있다.
+-- (비밀번호 변경 API 테스트 시 currentPassword 값으로 "password123" 사용)
 -- =====================================================================
 
 INSERT INTO member (email, password, nickname, introduction, role, status, created_at, updated_at) VALUES
-('admin@dgsw.hs.kr',  'password123', '관리자',     '커뮤니티 운영자입니다.',        'ADMIN', 'ACTIVE',    '2025-11-01 09:00:00', '2025-11-01 09:00:00'),
-('hong@dgsw.hs.kr',   'password123', '홍길동',     '안녕하세요, 홍길동입니다.',      'USER',  'ACTIVE',    '2025-11-02 10:10:00', '2025-11-02 10:10:00'),
-('kim@dgsw.hs.kr',    'password123', '김코딩',     '백엔드 공부 중입니다.',          'USER',  'ACTIVE',    '2025-11-03 11:20:00', '2025-11-03 11:20:00'),
-('lee@dgsw.hs.kr',    'password123', '이자바',     'Java / Spring 좋아합니다.',      'USER',  'ACTIVE',    '2025-11-04 12:30:00', '2025-11-04 12:30:00'),
-('park@dgsw.hs.kr',   'password123', '박스프링',   '스프링 부트 3년차.',             'USER',  'ACTIVE',    '2025-11-05 13:40:00', '2025-11-05 13:40:00'),
-('choi@dgsw.hs.kr',   'password123', '최코딩',     '닉네임 검색 테스트용 계정.',      'USER',  'ACTIVE',    '2025-11-06 14:50:00', '2025-11-06 14:50:00'),
-('jung@dgsw.hs.kr',   'password123', '정데이터',   'JPA 쿼리에 관심이 많습니다.',     'USER',  'ACTIVE',    '2025-11-07 15:00:00', '2025-11-07 15:00:00'),
-('kang@dgsw.hs.kr',   'password123', '강리액트',   '프론트엔드도 합니다.',            'USER',  'ACTIVE',    '2025-11-08 16:10:00', '2025-11-08 16:10:00'),
-('yoon@dgsw.hs.kr',   'password123', '윤테스터',   '테스트 코드 작성을 즐깁니다.',    'USER',  'ACTIVE',    '2025-11-09 17:20:00', '2025-11-09 17:20:00'),
-('ghost@dgsw.hs.kr',  'password123', '탈퇴한회원', '탈퇴 상태 조회 테스트용 계정.',   'USER',  'WITHDRAWN', '2025-11-09 18:30:00', '2025-11-10 09:00:00');
+('admin@dgsw.hs.kr',  '$2a$10$/.M2L4ve5dtOcyggK9bCiex0Qznh7NBEZ8BfV1guv6QaUFKh4lnIO', '관리자',     '커뮤니티 운영자입니다.',        'ADMIN', 'ACTIVE',    '2025-11-01 09:00:00', '2025-11-01 09:00:00'),
+('hong@dgsw.hs.kr',   '$2a$10$VsC.lFT0uSdK3vgpZZL./uu3NWyDfOCYiDgrXREwm4aovFX1EzECG', '홍길동',     '안녕하세요, 홍길동입니다.',      'USER',  'ACTIVE',    '2025-11-02 10:10:00', '2025-11-02 10:10:00'),
+('kim@dgsw.hs.kr',    '$2a$10$CkWzqrDw4T7mprq7s9Ko3.tSbDO1tW/VGlIP.5TZvh74fr8dcfJdq', '김코딩',     '백엔드 공부 중입니다.',          'USER',  'ACTIVE',    '2025-11-03 11:20:00', '2025-11-03 11:20:00'),
+('lee@dgsw.hs.kr',    '$2a$10$O3fImhtCxovvaolgM7RdrON7wpf/DvJOaCDyzHONs0KDVw8cM/Geu', '이자바',     'Java / Spring 좋아합니다.',      'USER',  'ACTIVE',    '2025-11-04 12:30:00', '2025-11-04 12:30:00'),
+('park@dgsw.hs.kr',   '$2a$10$W5sBUN.60lnRObY1Vm9IOePBWWFgEknOCa73PpM8yB8onwhxU4oLO', '박스프링',   '스프링 부트 3년차.',             'USER',  'ACTIVE',    '2025-11-05 13:40:00', '2025-11-05 13:40:00'),
+('choi@dgsw.hs.kr',   '$2a$10$B8hLNakBybvhm2Ht5OhJ8.RMkx2HFxzA79GYwn5r1Hfxr6IITri96', '최코딩',     '닉네임 검색 테스트용 계정.',      'USER',  'ACTIVE',    '2025-11-06 14:50:00', '2025-11-06 14:50:00'),
+('jung@dgsw.hs.kr',   '$2a$10$IZxkAZyop.9DLH.uIzumc.W7JMCBgVSN24t1VersT4jjx.qwV1wrS', '정데이터',   'JPA 쿼리에 관심이 많습니다.',     'USER',  'ACTIVE',    '2025-11-07 15:00:00', '2025-11-07 15:00:00'),
+('kang@dgsw.hs.kr',   '$2a$10$ZFrXk38AkrLMAzh5GKP0guYuJCWt0OcUDbyD4ZJpFchNzPr03NMuW', '강리액트',   '프론트엔드도 합니다.',            'USER',  'ACTIVE',    '2025-11-08 16:10:00', '2025-11-08 16:10:00'),
+('yoon@dgsw.hs.kr',   '$2a$10$c9wQz.0Lz7fKaGa5X.Wkxerjr4VvIORRoCPQ22Quu1QH2JFW5/I8G', '윤테스터',   '테스트 코드 작성을 즐깁니다.',    'USER',  'ACTIVE',    '2025-11-09 17:20:00', '2025-11-09 17:20:00'),
+('ghost@dgsw.hs.kr',  '$2a$10$P./ZKdkNQC9L.z5mCDhH/uxKpKZ9hB9HqYsq/Q1qJcHm8AH7PkzCK', '탈퇴한회원', '탈퇴 상태 조회 테스트용 계정.',   'USER',  'WITHDRAWN', '2025-11-09 18:30:00', '2025-11-10 09:00:00');
 
 -- =====================================================================
 -- 팀원 모집글 더미 데이터 (member_id 는 위 회원 INSERT 순서 기준)

@@ -14,6 +14,7 @@ import kr.hs.dgsw.community.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +26,7 @@ import org.springframework.util.StringUtils;
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -34,7 +36,7 @@ public class MemberServiceImpl implements MemberService {
 
         Member member = Member.builder()
                 .email(request.email())
-                .password(request.password())
+                .password(passwordEncoder.encode(request.password()))
                 .nickname(request.nickname())
                 .introduction(request.introduction())
                 .role(MemberRole.USER)
@@ -88,10 +90,16 @@ public class MemberServiceImpl implements MemberService {
     public void changePassword(Long id, PasswordChangeRequest request) {
         Member member = getActiveMember(id);
 
-        if (!member.getPassword().equals(request.currentPassword())) {
+        if (!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
         }
-        member.changePassword(request.newPassword());
+
+        if (passwordEncoder.matches(request.newPassword(), member.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_NOT_CHANGED);
+        }
+
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
+        log.info("비밀번호 변경 완료: id={}", id);
     }
 
     @Override
