@@ -106,10 +106,12 @@ public class RecruitmentApplicationServiceImpl implements RecruitmentApplication
         if (recruitment.isClosed()) {
             throw new BusinessException(ErrorCode.RECRUITMENT_ALREADY_CLOSED);
         }
-        application.accept();
-
+        // 상태를 바꾸기 전에 센다. 바꾼 뒤에 세면 count 쿼리 직전에 변경이 flush 되어
+        // 이번 수락이 이미 포함되므로 +1 을 하면 한 명이 두 번 집계된다.
         long acceptedCount = applicationRepository.countByRecruitmentIdAndStatus(
                 recruitment.getId(), RecruitmentApplicationStatus.ACCEPTED) + 1;
+        application.accept();
+
         if (acceptedCount >= recruitment.getCapacity()) {
             recruitment.close();
             log.info("정원이 차서 모집글 자동 마감: recruitmentId={}", recruitment.getId());
