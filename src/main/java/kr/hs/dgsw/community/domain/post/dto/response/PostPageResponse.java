@@ -5,14 +5,14 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public record PostPageResponse(
-        List<PostResponse> content,
+        List<PostListResponse> content,
         int page,
         int size,
         long totalElements,
         int totalPages,
         boolean last
 ) {
-    public static PostPageResponse from(Page<PostResponse> page) {
+    public static PostPageResponse from(Page<PostListResponse> page) {
         return new PostPageResponse(
                 page.getContent(),
                 page.getNumber(),

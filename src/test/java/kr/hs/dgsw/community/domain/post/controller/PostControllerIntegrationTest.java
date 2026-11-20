@@ -1,6 +1,8 @@
 package kr.hs.dgsw.community.domain.post.controller;
 
 import kr.hs.dgsw.community.global.error.ErrorCode;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:post-test;MODE=MySQL;DB_CLOSE_DELAY=-1")
+@SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:post-test;MODE=MySQL;DB_CLOSE_DELAY=-1",
+        "spring.jpa.properties.hibernate.generate_statistics=true"})
 @AutoConfigureMockMvc
 class PostControllerIntegrationTest {
 
@@ -29,6 +32,9 @@ class PostControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
 
     @Test
     @DisplayName("게시글을 등록·조회·수정한 뒤 삭제할 수 있다")
@@ -48,10 +54,14 @@ class PostControllerIntegrationTest {
         String location = created.getResponse().getHeader("Location");
         assertThat(location).isEqualTo("/api/posts/" + id);
 
+        var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
         mockMvc.perform(get("/api/posts").param("page", "0").param("size", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content.length()").value(1))
-                .andExpect(jsonPath("$.data.content[0].id").value(id));
+                .andExpect(jsonPath("$.data.content[0].id").value(id))
+                .andExpect(jsonPath("$.data.content[0].content").doesNotExist());
+        assertThat(statistics.getEntityLoadCount()).isZero();
 
         mockMvc.perform(get(location))
                 .andExpect(status().isOk())

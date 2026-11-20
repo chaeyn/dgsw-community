@@ -44,7 +44,7 @@ public class PostServiceImpl implements PostService {
     public PostPageResponse findAll(Pageable pageable) {
         PageRequest newestFirst = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "id"));
-        return PostPageResponse.from(postRepository.findAll(newestFirst).map(PostServiceImpl::toResponse));
+        return PostPageResponse.from(postRepository.findPostSummaries(newestFirst));
     }
 
     @Override
