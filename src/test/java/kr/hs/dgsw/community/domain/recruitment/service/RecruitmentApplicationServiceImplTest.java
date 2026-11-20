@@ -106,7 +106,7 @@ class RecruitmentApplicationServiceImplTest {
     class Apply {
 
         private final RecruitmentApplicationCreateRequest request =
-                new RecruitmentApplicationCreateRequest(2L, "지원합니다");
+                new RecruitmentApplicationCreateRequest("지원합니다");
 
         @Test
         @DisplayName("성공 - PENDING 상태로 저장된다")
@@ -117,7 +117,7 @@ class RecruitmentApplicationServiceImplTest {
             given(applicationRepository.save(any(RecruitmentApplication.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
-            RecruitmentApplicationResponse response = applicationService.apply(RECRUITMENT_ID, request);
+            RecruitmentApplicationResponse response = applicationService.apply(RECRUITMENT_ID, 2L, request);
 
             assertThat(response.applicantNickname()).isEqualTo("김코딩");
             assertThat(response.status()).isEqualTo(RecruitmentApplicationStatus.PENDING.name());
@@ -130,7 +130,7 @@ class RecruitmentApplicationServiceImplTest {
             recruitment.close();
             given(recruitmentRepository.findWithAuthorById(RECRUITMENT_ID)).willReturn(Optional.of(recruitment));
 
-            assertThatThrownBy(() -> applicationService.apply(RECRUITMENT_ID, request))
+            assertThatThrownBy(() -> applicationService.apply(RECRUITMENT_ID, 2L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RECRUITMENT_ALREADY_CLOSED);
         }
@@ -141,7 +141,7 @@ class RecruitmentApplicationServiceImplTest {
             given(recruitmentRepository.findWithAuthorById(RECRUITMENT_ID))
                     .willReturn(Optional.of(createRecruitment(2, LocalDate.now().minusDays(1))));
 
-            assertThatThrownBy(() -> applicationService.apply(RECRUITMENT_ID, request))
+            assertThatThrownBy(() -> applicationService.apply(RECRUITMENT_ID, 2L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RECRUITMENT_ALREADY_CLOSED);
         }
@@ -153,7 +153,7 @@ class RecruitmentApplicationServiceImplTest {
             given(memberRepository.findByIdAndStatus(1L, MemberStatus.ACTIVE)).willReturn(Optional.of(author));
 
             assertThatThrownBy(() -> applicationService.apply(
-                    RECRUITMENT_ID, new RecruitmentApplicationCreateRequest(1L, "제가 쓴 글")))
+                    RECRUITMENT_ID, 1L, new RecruitmentApplicationCreateRequest("제가 쓴 글")))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.APPLICATION_SELF_NOT_ALLOWED);
         }
@@ -165,7 +165,7 @@ class RecruitmentApplicationServiceImplTest {
             given(memberRepository.findByIdAndStatus(2L, MemberStatus.ACTIVE)).willReturn(Optional.of(applicant));
             given(applicationRepository.existsByRecruitmentIdAndApplicantId(RECRUITMENT_ID, 2L)).willReturn(true);
 
-            assertThatThrownBy(() -> applicationService.apply(RECRUITMENT_ID, request))
+            assertThatThrownBy(() -> applicationService.apply(RECRUITMENT_ID, 2L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DUPLICATE_APPLICATION);
 
@@ -189,7 +189,7 @@ class RecruitmentApplicationServiceImplTest {
                     RECRUITMENT_ID, RecruitmentApplicationStatus.ACCEPTED)).willReturn(0L);
 
             RecruitmentApplicationResponse response = applicationService.decide(
-                    RECRUITMENT_ID, APPLICATION_ID, new RecruitmentApplicationDecisionRequest(1L, true));
+                    RECRUITMENT_ID, APPLICATION_ID, 1L, new RecruitmentApplicationDecisionRequest(true));
 
             assertThat(response.status()).isEqualTo(RecruitmentApplicationStatus.ACCEPTED.name());
             assertThat(recruitment.isClosed()).isFalse();
@@ -207,7 +207,7 @@ class RecruitmentApplicationServiceImplTest {
                     RECRUITMENT_ID, RecruitmentApplicationStatus.ACCEPTED)).willReturn(1L);
 
             applicationService.decide(
-                    RECRUITMENT_ID, APPLICATION_ID, new RecruitmentApplicationDecisionRequest(1L, true));
+                    RECRUITMENT_ID, APPLICATION_ID, 1L, new RecruitmentApplicationDecisionRequest(true));
 
             assertThat(recruitment.isClosed()).isTrue();
         }
@@ -222,7 +222,7 @@ class RecruitmentApplicationServiceImplTest {
                     .willReturn(Optional.of(application));
 
             RecruitmentApplicationResponse response = applicationService.decide(
-                    RECRUITMENT_ID, APPLICATION_ID, new RecruitmentApplicationDecisionRequest(1L, false));
+                    RECRUITMENT_ID, APPLICATION_ID, 1L, new RecruitmentApplicationDecisionRequest(false));
 
             assertThat(response.status()).isEqualTo(RecruitmentApplicationStatus.REJECTED.name());
             assertThat(recruitment.isClosed()).isFalse();
@@ -234,7 +234,7 @@ class RecruitmentApplicationServiceImplTest {
             given(recruitmentRepository.findWithAuthorById(RECRUITMENT_ID)).willReturn(Optional.of(createRecruitment(2)));
 
             assertThatThrownBy(() -> applicationService.decide(
-                    RECRUITMENT_ID, APPLICATION_ID, new RecruitmentApplicationDecisionRequest(2L, true)))
+                    RECRUITMENT_ID, APPLICATION_ID, 2L, new RecruitmentApplicationDecisionRequest(true)))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RECRUITMENT_FORBIDDEN);
         }
@@ -250,7 +250,7 @@ class RecruitmentApplicationServiceImplTest {
                     .willReturn(Optional.of(application));
 
             assertThatThrownBy(() -> applicationService.decide(
-                    RECRUITMENT_ID, APPLICATION_ID, new RecruitmentApplicationDecisionRequest(1L, true)))
+                    RECRUITMENT_ID, APPLICATION_ID, 1L, new RecruitmentApplicationDecisionRequest(true)))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.APPLICATION_ALREADY_PROCESSED);
 

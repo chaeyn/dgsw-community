@@ -35,8 +35,8 @@ public class RecruitmentServiceImpl implements RecruitmentService {
 
     @Override
     @Transactional
-    public RecruitmentResponse create(RecruitmentCreateRequest request) {
-        Member author = memberRepository.findByIdAndStatus(request.memberId(), MemberStatus.ACTIVE)
+    public RecruitmentResponse create(Long memberId, RecruitmentCreateRequest request) {
+        Member author = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         long openCount = recruitmentRepository.countByAuthorIdAndStatus(author.getId(), RecruitmentStatus.OPEN);
@@ -74,9 +74,9 @@ public class RecruitmentServiceImpl implements RecruitmentService {
 
     @Override
     @Transactional
-    public RecruitmentResponse update(Long id, RecruitmentUpdateRequest request) {
+    public RecruitmentResponse update(Long id, Long memberId, RecruitmentUpdateRequest request) {
         Recruitment recruitment = getRecruitment(id);
-        validateAuthor(recruitment, request.memberId());
+        validateAuthor(recruitment, memberId);
         validateNotClosed(recruitment);
 
         recruitment.update(request.title(), request.content(), request.position(),

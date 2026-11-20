@@ -71,13 +71,13 @@ class RecruitmentApplicationAutoCloseTest {
     }
 
     private Long apply(Member applicant) {
-        return applicationService.apply(recruitment.getId(),
-                new RecruitmentApplicationCreateRequest(applicant.getId(), "지원합니다")).id();
+        return applicationService.apply(recruitment.getId(), applicant.getId(),
+                new RecruitmentApplicationCreateRequest("지원합니다")).id();
     }
 
     private void accept(Long applicationId) {
-        applicationService.decide(recruitment.getId(), applicationId,
-                new RecruitmentApplicationDecisionRequest(author.getId(), true));
+        applicationService.decide(recruitment.getId(), applicationId, author.getId(),
+                new RecruitmentApplicationDecisionRequest(true));
     }
 
     @Test

@@ -12,9 +12,6 @@ import java.time.LocalDate;
 
 public record RecruitmentUpdateRequest(
 
-        @NotNull(message = "작성자 id는 필수입니다.")
-        Long memberId,
-
         @NotBlank(message = "제목은 필수입니다.")
         @Size(max = 100, message = "제목은 100자 이하여야 합니다.")
         String title,

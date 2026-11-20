@@ -1,7 +1,10 @@
 package kr.hs.dgsw.community.global.error;
 
+import kr.hs.dgsw.community.domain.post.controller.PostController;
+import kr.hs.dgsw.community.domain.post.service.PostService;
 import kr.hs.dgsw.community.domain.recruitment.controller.RecruitmentController;
 import kr.hs.dgsw.community.domain.recruitment.service.RecruitmentService;
+import kr.hs.dgsw.community.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,14 +15,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(RecruitmentController.class)
+@WebMvcTest({RecruitmentController.class, PostController.class})
 @DisplayName("GlobalExceptionHandler 상태 코드 테스트")
 class GlobalExceptionHandlerTest {
 
@@ -28,6 +31,12 @@ class GlobalExceptionHandlerTest {
 
     @MockitoBean
     private RecruitmentService recruitmentService;
+
+    @MockitoBean
+    private PostService postService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Test
     @DisplayName("JSON 문법이 틀리면 400 INVALID_JSON 을 반환한다")
@@ -75,10 +84,10 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("필수 쿼리 파라미터가 없으면 400 MISSING_PARAMETER 를 반환한다")
     void missingParameter() throws Exception {
-        mockMvc.perform(put("/api/recruitments/1/close"))
+        mockMvc.perform(delete("/api/posts/1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCode.MISSING_PARAMETER.name()))
-                .andExpect(jsonPath("$.errors[0].field").value("memberId"));
+                .andExpect(jsonPath("$.errors[0].field").value("authorId"));
     }
 
     @Test

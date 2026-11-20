@@ -9,6 +9,8 @@ import kr.hs.dgsw.community.domain.recruitment.entity.RecruitmentStatus;
 import kr.hs.dgsw.community.domain.recruitment.service.RecruitmentService;
 import kr.hs.dgsw.community.global.error.BusinessException;
 import kr.hs.dgsw.community.global.error.ErrorCode;
+import kr.hs.dgsw.community.global.security.JwtTokenProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -41,6 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RecruitmentControllerTest {
 
     private static final LocalDate DEADLINE = LocalDate.now().plusDays(7);
+    private static final String AUTHOR_TOKEN = "Bearer author-token";
+    private static final String OTHER_TOKEN = "Bearer other-token";
 
     @Autowired
     private MockMvc mockMvc;
@@ -51,6 +56,16 @@ class RecruitmentControllerTest {
     @MockitoBean
     private RecruitmentService recruitmentService;
 
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @BeforeEach
+    void setUpToken() {
+        // 토큰 문자열마다 로그인한 회원 id 가 정해져 있다고 가정한다.
+        given(jwtTokenProvider.parseMemberId(AUTHOR_TOKEN.substring(7))).willReturn(1L);
+        given(jwtTokenProvider.parseMemberId(OTHER_TOKEN.substring(7))).willReturn(2L);
+    }
+
     private RecruitmentResponse sampleResponse() {
         return new RecruitmentResponse(10L, 1L, "홍길동", "백엔드 팀원 구합니다", "같이 하실 분",
                 "BACKEND", 2, DEADLINE, "OPEN", LocalDateTime.of(2026, 11, 3, 9, 30));
@@ -58,20 +73,21 @@ class RecruitmentControllerTest {
 
     private RecruitmentCreateRequest createRequest() {
         return new RecruitmentCreateRequest(
-                1L, "백엔드 팀원 구합니다", "같이 하실 분", RecruitmentPosition.BACKEND, 2, DEADLINE);
+                "백엔드 팀원 구합니다", "같이 하실 분", RecruitmentPosition.BACKEND, 2, DEADLINE);
     }
 
     private RecruitmentUpdateRequest updateRequest() {
         return new RecruitmentUpdateRequest(
-                1L, "제목 수정", "내용 수정", RecruitmentPosition.BACKEND, 2, DEADLINE);
+                "제목 수정", "내용 수정", RecruitmentPosition.BACKEND, 2, DEADLINE);
     }
 
     @Test
     @DisplayName("POST /api/recruitments - 등록 성공 시 201 Created 와 Location 헤더를 반환한다")
     void create_success() throws Exception {
-        given(recruitmentService.create(any(RecruitmentCreateRequest.class))).willReturn(sampleResponse());
+        given(recruitmentService.create(eq(1L), any(RecruitmentCreateRequest.class))).willReturn(sampleResponse());
 
         mockMvc.perform(post("/api/recruitments")
+                        .header("Authorization", AUTHOR_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest())))
                 .andExpect(status().isCreated())
@@ -85,9 +101,10 @@ class RecruitmentControllerTest {
     @DisplayName("POST /api/recruitments - 제목이 비었거나 마감일이 과거면 400 과 필드 오류를 반환한다")
     void create_validationFail() throws Exception {
         RecruitmentCreateRequest request = new RecruitmentCreateRequest(
-                1L, " ", "같이 하실 분", RecruitmentPosition.BACKEND, 0, LocalDate.now().minusDays(1));
+                " ", "같이 하실 분", RecruitmentPosition.BACKEND, 0, LocalDate.now().minusDays(1));
 
         mockMvc.perform(post("/api/recruitments")
+                        .header("Authorization", AUTHOR_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -128,9 +145,10 @@ class RecruitmentControllerTest {
     @DisplayName("PUT /api/recruitments/{id} - 작성자가 아니면 403 Forbidden 을 반환한다")
     void update_forbidden() throws Exception {
         willThrow(new BusinessException(ErrorCode.RECRUITMENT_FORBIDDEN))
-                .given(recruitmentService).update(eq(10L), any(RecruitmentUpdateRequest.class));
+                .given(recruitmentService).update(eq(10L), eq(2L), any(RecruitmentUpdateRequest.class));
 
         mockMvc.perform(put("/api/recruitments/10")
+                        .header("Authorization", OTHER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest())))
                 .andExpect(status().isForbidden())
@@ -143,7 +161,7 @@ class RecruitmentControllerTest {
         willThrow(new BusinessException(ErrorCode.RECRUITMENT_ALREADY_CLOSED))
                 .given(recruitmentService).close(10L, 1L);
 
-        mockMvc.perform(put("/api/recruitments/10/close").param("memberId", "1"))
+        mockMvc.perform(put("/api/recruitments/10/close").header("Authorization", AUTHOR_TOKEN))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(ErrorCode.RECRUITMENT_ALREADY_CLOSED.name()));
     }
@@ -151,9 +169,21 @@ class RecruitmentControllerTest {
     @Test
     @DisplayName("DELETE /api/recruitments/{id} - 삭제 성공 시 204 No Content 를 반환한다")
     void delete_success() throws Exception {
-        mockMvc.perform(delete("/api/recruitments/10").param("memberId", "1"))
+        mockMvc.perform(delete("/api/recruitments/10").header("Authorization", AUTHOR_TOKEN))
                 .andExpect(status().isNoContent());
 
         verify(recruitmentService).delete(10L, 1L);
+    }
+
+    @Test
+    @DisplayName("POST /api/recruitments - 로그인 토큰 없이 등록하면 401 Unauthorized 를 반환한다")
+    void create_withoutToken() throws Exception {
+        mockMvc.perform(post("/api/recruitments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest())))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(ErrorCode.UNAUTHORIZED.name()));
+
+        verify(recruitmentService, never()).create(any(), any());
     }
 }

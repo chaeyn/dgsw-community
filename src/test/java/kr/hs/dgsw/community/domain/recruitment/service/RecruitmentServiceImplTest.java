@@ -86,7 +86,7 @@ class RecruitmentServiceImplTest {
     class Create {
 
         private final RecruitmentCreateRequest request = new RecruitmentCreateRequest(
-                1L, "백엔드 팀원 구합니다", "같이 하실 분", RecruitmentPosition.BACKEND, 2, DEADLINE);
+                "백엔드 팀원 구합니다", "같이 하실 분", RecruitmentPosition.BACKEND, 2, DEADLINE);
 
         @Test
         @DisplayName("성공 - OPEN 상태로 저장되고 작성자 정보가 응답에 담긴다")
@@ -101,7 +101,7 @@ class RecruitmentServiceImplTest {
                         return recruitment;
                     });
 
-            RecruitmentResponse response = recruitmentService.create(request);
+            RecruitmentResponse response = recruitmentService.create(1L, request);
 
             assertThat(response.id()).isEqualTo(10L);
             assertThat(response.authorNickname()).isEqualTo("홍길동");
@@ -113,7 +113,7 @@ class RecruitmentServiceImplTest {
         void create_memberNotFound() {
             given(memberRepository.findByIdAndStatus(1L, MemberStatus.ACTIVE)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> recruitmentService.create(request))
+            assertThatThrownBy(() -> recruitmentService.create(1L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
 
@@ -127,7 +127,7 @@ class RecruitmentServiceImplTest {
                     .willReturn(Optional.of(createMember(1L, "홍길동")));
             given(recruitmentRepository.countByAuthorIdAndStatus(1L, RecruitmentStatus.OPEN)).willReturn(3L);
 
-            assertThatThrownBy(() -> recruitmentService.create(request))
+            assertThatThrownBy(() -> recruitmentService.create(1L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RECRUITMENT_LIMIT_EXCEEDED);
 
@@ -186,7 +186,7 @@ class RecruitmentServiceImplTest {
     class Update {
 
         private final RecruitmentUpdateRequest request = new RecruitmentUpdateRequest(
-                1L, "제목 수정", "내용 수정", RecruitmentPosition.FRONTEND, 4, DEADLINE);
+                "제목 수정", "내용 수정", RecruitmentPosition.FRONTEND, 4, DEADLINE);
 
         @Test
         @DisplayName("성공 - 작성자가 수정하면 변경 내용이 반영된다")
@@ -194,7 +194,7 @@ class RecruitmentServiceImplTest {
             Recruitment recruitment = createRecruitment(10L, createMember(1L, "홍길동"));
             given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
-            RecruitmentResponse response = recruitmentService.update(10L, request);
+            RecruitmentResponse response = recruitmentService.update(10L, 1L, request);
 
             assertThat(response.title()).isEqualTo("제목 수정");
             assertThat(response.position()).isEqualTo("FRONTEND");
@@ -207,7 +207,7 @@ class RecruitmentServiceImplTest {
             Recruitment recruitment = createRecruitment(10L, createMember(2L, "김코딩"));
             given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
-            assertThatThrownBy(() -> recruitmentService.update(10L, request))
+            assertThatThrownBy(() -> recruitmentService.update(10L, 1L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RECRUITMENT_FORBIDDEN);
 
@@ -221,7 +221,7 @@ class RecruitmentServiceImplTest {
             recruitment.close();
             given(recruitmentRepository.findWithAuthorById(10L)).willReturn(Optional.of(recruitment));
 
-            assertThatThrownBy(() -> recruitmentService.update(10L, request))
+            assertThatThrownBy(() -> recruitmentService.update(10L, 1L, request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RECRUITMENT_ALREADY_CLOSED);
         }

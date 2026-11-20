@@ -33,11 +33,11 @@ public class RecruitmentApplicationServiceImpl implements RecruitmentApplication
 
     @Override
     @Transactional
-    public RecruitmentApplicationResponse apply(Long recruitmentId, RecruitmentApplicationCreateRequest request) {
+    public RecruitmentApplicationResponse apply(Long recruitmentId, Long memberId, RecruitmentApplicationCreateRequest request) {
         Recruitment recruitment = getRecruitment(recruitmentId);
         validateOpen(recruitment);
 
-        Member applicant = memberRepository.findByIdAndStatus(request.memberId(), MemberStatus.ACTIVE)
+        Member applicant = memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (recruitment.isWrittenBy(applicant.getId())) {
@@ -70,10 +70,10 @@ public class RecruitmentApplicationServiceImpl implements RecruitmentApplication
 
     @Override
     @Transactional
-    public RecruitmentApplicationResponse decide(Long recruitmentId, Long applicationId,
+    public RecruitmentApplicationResponse decide(Long recruitmentId, Long applicationId, Long memberId,
                                                  RecruitmentApplicationDecisionRequest request) {
         Recruitment recruitment = getRecruitment(recruitmentId);
-        validateAuthor(recruitment, request.memberId());
+        validateAuthor(recruitment, memberId);
 
         RecruitmentApplication application = getApplication(recruitmentId, applicationId);
         if (!application.isPending()) {

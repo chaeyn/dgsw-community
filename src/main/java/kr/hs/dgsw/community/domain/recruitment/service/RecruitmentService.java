@@ -10,14 +10,14 @@ import org.springframework.data.domain.Pageable;
 
 public interface RecruitmentService {
 
-    RecruitmentResponse create(RecruitmentCreateRequest request);
+    RecruitmentResponse create(Long memberId, RecruitmentCreateRequest request);
 
     RecruitmentResponse findById(Long id);
 
     RecruitmentPageResponse search(String keyword, RecruitmentPosition position,
                                    RecruitmentStatus status, Pageable pageable);
 
-    RecruitmentResponse update(Long id, RecruitmentUpdateRequest request);
+    RecruitmentResponse update(Long id, Long memberId, RecruitmentUpdateRequest request);
 
     RecruitmentResponse close(Long id, Long memberId);
 
