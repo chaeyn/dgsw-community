@@ -9,9 +9,12 @@ import kr.hs.dgsw.community.domain.post.service.PostService;
 import kr.hs.dgsw.community.global.error.ErrorCode;
 import kr.hs.dgsw.community.global.response.ApiResponse;
 import kr.hs.dgsw.community.global.response.ErrorResponse;
+import kr.hs.dgsw.community.global.security.BearerTokenResolver;
+import kr.hs.dgsw.community.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,8 +24,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -34,10 +37,13 @@ import java.net.URI;
 public class PostController {
 
     private final PostService postService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<PostResponse>> create(@Valid @RequestBody PostCreateRequest request) {
-        PostResponse response = postService.create(request);
+    public ResponseEntity<ApiResponse<PostResponse>> create(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @Valid @RequestBody PostCreateRequest request) {
+        PostResponse response = postService.create(resolveMemberId(authorization), request);
         return ResponseEntity.created(URI.create("/api/posts/" + response.id()))
                 .body(ApiResponse.of("게시글이 등록되었습니다.", response));
     }
@@ -56,14 +62,22 @@ public class PostController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<PostResponse>> update(
             @PathVariable Long id,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             @Valid @RequestBody PostUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.of("게시글이 수정되었습니다.", postService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.of("게시글이 수정되었습니다.",
+                postService.update(id, resolveMemberId(authorization), request)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id, @RequestParam Long authorId) {
-        postService.delete(id, authorId);
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        postService.delete(id, resolveMemberId(authorization));
         return ResponseEntity.noContent().build();
+    }
+
+    private Long resolveMemberId(String authorization) {
+        return jwtTokenProvider.parseMemberId(BearerTokenResolver.resolve(authorization));
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})

@@ -28,9 +28,8 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostResponse create(PostCreateRequest request) {
-        Member author = memberRepository.findByIdAndStatus(request.authorId(), MemberStatus.ACTIVE)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    public PostResponse create(Long memberId, PostCreateRequest request) {
+        Member author = getActiveMember(memberId);
         Post post = new Post(author, request.title(), request.content());
         return toResponse(postRepository.save(post));
     }
@@ -49,9 +48,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostResponse update(Long id, PostUpdateRequest request) {
+    public PostResponse update(Long id, Long memberId, PostUpdateRequest request) {
+        getActiveMember(memberId);
         Post post = getPost(id);
-        validateAuthor(post, request.authorId());
+        validateAuthor(post, memberId);
         post.update(request.title(), request.content());
         // Flush auditing changes before building the response containing updatedAt.
         postRepository.flush();
@@ -60,10 +60,16 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void delete(Long id, Long authorId) {
+    public void delete(Long id, Long memberId) {
+        getActiveMember(memberId);
         Post post = getPost(id);
-        validateAuthor(post, authorId);
+        validateAuthor(post, memberId);
         postRepository.delete(post);
+    }
+
+    private Member getActiveMember(Long memberId) {
+        return memberRepository.findByIdAndStatus(memberId, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     private void validateAuthor(Post post, Long authorId) {

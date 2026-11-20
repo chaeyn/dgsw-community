@@ -1,7 +1,7 @@
 package kr.hs.dgsw.community.global.error;
 
-import kr.hs.dgsw.community.domain.post.controller.PostController;
-import kr.hs.dgsw.community.domain.post.service.PostService;
+import kr.hs.dgsw.community.domain.member.controller.MemberController;
+import kr.hs.dgsw.community.domain.member.service.MemberService;
 import kr.hs.dgsw.community.domain.recruitment.controller.RecruitmentController;
 import kr.hs.dgsw.community.domain.recruitment.service.RecruitmentService;
 import kr.hs.dgsw.community.global.security.JwtTokenProvider;
@@ -15,14 +15,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({RecruitmentController.class, PostController.class})
+@WebMvcTest({RecruitmentController.class, MemberController.class})
 @DisplayName("GlobalExceptionHandler 상태 코드 테스트")
 class GlobalExceptionHandlerTest {
 
@@ -33,7 +32,7 @@ class GlobalExceptionHandlerTest {
     private RecruitmentService recruitmentService;
 
     @MockitoBean
-    private PostService postService;
+    private MemberService memberService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
@@ -84,10 +83,10 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("필수 쿼리 파라미터가 없으면 400 MISSING_PARAMETER 를 반환한다")
     void missingParameter() throws Exception {
-        mockMvc.perform(delete("/api/posts/1"))
+        mockMvc.perform(get("/api/members/search/email"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCode.MISSING_PARAMETER.name()))
-                .andExpect(jsonPath("$.errors[0].field").value("authorId"));
+                .andExpect(jsonPath("$.errors[0].field").value("email"));
     }
 
     @Test

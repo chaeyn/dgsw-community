@@ -8,13 +8,13 @@ import org.springframework.data.domain.Pageable;
 
 public interface PostService {
 
-    PostResponse create(PostCreateRequest request);
+    PostResponse create(Long memberId, PostCreateRequest request);
 
     PostResponse findById(Long id);
 
     PostPageResponse findAll(Pageable pageable);
 
-    PostResponse update(Long id, PostUpdateRequest request);
+    PostResponse update(Long id, Long memberId, PostUpdateRequest request);
 
-    void delete(Long id, Long authorId);
+    void delete(Long id, Long memberId);
 }

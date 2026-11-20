@@ -234,6 +234,19 @@ class AuthServiceImplTest {
         }
 
         @Test
+        @DisplayName("실패 - 리프레시 토큰으로 내 정보 조회나 로그아웃을 할 수 없다")
+        void rejectRefreshTokenAsAccessToken() {
+            String token = jwtTokenProvider.createRefreshToken(1L);
+            assertThatThrownBy(() -> authService.getMe(token))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode").isEqualTo(ErrorCode.INVALID_TOKEN);
+            assertThatThrownBy(() -> authService.logout(token))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode").isEqualTo(ErrorCode.INVALID_TOKEN);
+            verify(refreshTokenRepository, never()).deleteAllByMemberId(anyLong());
+        }
+
+        @Test
         @DisplayName("성공 - 액세스 토큰의 회원 정보를 반환하며 비밀번호는 포함하지 않는다")
         void getMe_success() {
             given(memberRepository.findByIdAndStatus(1L, MemberStatus.ACTIVE))

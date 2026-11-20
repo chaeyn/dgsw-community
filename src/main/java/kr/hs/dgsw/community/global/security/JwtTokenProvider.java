@@ -46,7 +46,11 @@ public class JwtTokenProvider {
     }
 
     public Long parseMemberId(String token) {
-        return Long.valueOf(parseClaims(token).getSubject());
+        Claims claims = parseClaims(token);
+        if (!ACCESS_TOKEN.equals(claims.get(TOKEN_TYPE_CLAIM, String.class))) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+        return Long.valueOf(claims.getSubject());
     }
 
     public Long parseRefreshTokenMemberId(String token) {
